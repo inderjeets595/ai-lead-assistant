@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}AI Analytics — Performance Dashboard{% endblock %}
+{% block page_title %}AI Analytics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% if empty %}
+<!-- ── Empty State ── -->
+<div class="analytics-empty fade-up">
+    <i class="fas fa-chart-pie"></i>
+    <h3>No Analytics Data Yet</h3>
+    <p>Start capturing leads through the chatbot and analytics will populate here automatically.</p>
+    <a href="/admin" style="padding:10px 22px;background:var(--blue);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;margin-top:6px;">
+        <i class="fas fa-users me-2"></i>View Leads
+    </a>
+</div>
+
+{% else %}
+
+<!-- ══ Metric Cards ══ -->
+<div class="metrics-grid">
+    <div class="glass-card metric-card fade-up fade-up-1">
+        <div class="metric-header">
+            <div class="metric-icon mi-blue"><i class="fas fa-users"></i></div>
+            <div class="metric-label">Total Leads</div>
+        </div>
+        <div class="metric-value">{{ total_leads }}</div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar" style="width:100%;"></div>
+        </div>
+        <div class="metric-sub">All captured leads</div>
+    </div>
+    <div class="glass-card metric-card fade-up fade-up-2">
+        <div class="metric-header">
+            <div class="metric-icon mi-green"><i class="fas fa-brain"></i></div>
+            <div class="metric-label">Avg AI Confidence</div>
+        </div>
+        <div class="metric-value">{{ avg_score }}</div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar animate-width" data-width="{{ avg_score }}"></div>
+        </div>
+        <div class="metric-sub">Lead confidence score</div>
+    </div>
+    <div class="glass-card metric-card fade-up fade-up-3">
+        <div class="metric-header">
+            <div class="metric-icon mi-purple"><i class="fas fa-language"></i></div>
+            <div class="metric-label">Translation Rate</div>
+        </div>
+        <div class="metric-value">{{ ((translated_leads / total_leads) * 100)|round(1) }}%</div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar animate-width" data-width="{{ ((translated_leads / total_leads) * 100)|round(1) }}"></div>
+        </div>
+        <div class="metric-sub">Multilingual support</div>
+    </div>
+    <div class="glass-card metric-card fade-up fade-up-4">
+        <div class="metric-header">
+            <div class="metric-icon mi-orange"><i class="fas fa-gauge-high"></i></div>
+            <div class="metric-label">AI Performance</div>
+        </div>
+        <div class="metric-value">{{ performance_score }}</div>
+        <div class="metric-bar-wrap">
+            <div class="metric-bar animate-width" data-width="{{ performance_score }}" style="background:linear-gradient(90deg,#f59e0b,#fbbf24);box-shadow:0 0 8px rgba(245,158,11,0.50);"></div>
+        </div>
+        <div class="metric-sub">Overall quality metric</div>
+    </div>
+</div>
+
+<!-- ══ Row 1: Trend + Sentiment ══ -->
+<div class="charts-row charts-row-2 fade-up fade-up-2">
+    <div class="glass-card chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title">Lead Generation Trends</div>
+                <div class="chart-sub">Daily new leads over time</div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <canvas id="trendChart" height="140"></canvas>
+        </div>
+    </div>
+
+    <div class="glass-card chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title">Sentiment Distribution</div>
+                <div class="chart-sub">Customer sentiment breakdown</div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <canvas id="sentimentChart" height="180"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Row 2: Status + Score Dist + Confidence Metrics ══ -->
+<div class="charts-row charts-row-3 fade-up fade-up-3">
+    <div class="glass-card chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title">Lead Status Analytics</div>
+                <div class="chart-sub">Hot / Warm / Cold split</div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <canvas id="statusChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="glass-card chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title">Score Distribution</div>
+                <div class="chart-sub">AI confidence score ranges</div>
+            </div>
+        </div>
+        <div class="chart-area">
+            <canvas id="scoreDistChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="glass-card chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title">Confidence Metrics</div>
+                <div class="chart-sub">High / avg / low scores</div>
+            </div>
+        </div>
+        <div class="conf-list">
+            <div class="conf-item">
+                <div class="conf-item-header">
+                    <span>Highest Score</span>
+                    <span style="color:#4ade80;">{{ max_score }}</span>
+                </div>
+                <div class="conf-track"><div class="conf-fill fill-green animate-width" data-width="{{ max_score }}"></div></div>
+            </div>
+            <div class="conf-item">
+                <div class="conf-item-header">
+                    <span>Average Score</span>
+                    <span style="color:#60a5fa;">{{ avg_score }}</span>
+                </div>
+                <div class="conf-track"><div class="conf-fill fill-blue animate-width" data-width="{{ avg_score }}"></div></div>
+            </div>
+            <div class="conf-item">
+                <div class="conf-item-header">
+                    <span>Lowest Score</span>
+                    <span style="color:#f87171;">{{ min_score }}</span>
+                </div>
+                <div class="conf-track"><div class="conf-fill fill-red animate-width" data-width="{{ min_score }}"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Row 3: Multilingual + System Health ══ -->
+<div class="charts-row charts-row-1h fade-up fade-up-4" style="margin-bottom: 40px;">
+    <div class="glass-card chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title">Multilingual Processing</div>
+                <div class="chart-sub">Translated vs. original leads</div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center;">
+            <div class="chart-area">
+                <canvas id="langChart" height="180"></canvas>
+            </div>
+            <div class="lang-legend">
+                <div class="legend-row">
+                    <div class="legend-dot" style="background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,0.55);"></div>
+                    Translated
+                    <span class="legend-val">{{ translated_leads }}</span>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-dot legend-dot-original"></div>
+                    Original
+                    <span class="legend-val">{{ non_translated_leads }}</span>
+                </div>
+                <div class="legend-row" style="margin-top:8px;border-top:1px solid var(--glass-border);padding-top:12px;">
+                    <div class="legend-dot" style="background:linear-gradient(135deg,var(--blue),#6366f1);border-radius:50%;"></div>
+                    Total
+                    <span class="legend-val">{{ total_leads }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card chart-card">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title">Overall AI System Health</div>
+                <div class="chart-sub">Based on confidence &amp; processing</div>
+            </div>
+        </div>
+        <div class="health-center">
+            <div class="health-ring">
+                <svg viewBox="0 0 140 140" width="140" height="140">
+                    <defs>
+                        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%"   stop-color="#2563EB"/>
+                            <stop offset="100%" stop-color="#818cf8"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="ring-track" cx="70" cy="70" r="60"/>
+                    <circle class="ring-fill"
+                            cx="70" cy="70" r="60"
+                            stroke-dasharray="377"
+                            stroke-dashoffset="{{ 377 - (377 * performance_score / 100)|round }}"
+                            id="healthRing"/>
+                </svg>
+                <div class="health-number" id="healthNum">0%</div>
+            </div>
+            <div class="health-title">System Performance</div>
+            <div class="health-desc">AI confidence scores and processing quality combined metric.</div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══ AI Accuracy Analytics Section ══ -->
+<div class="accuracy-section fade-up" style="margin-bottom:40px;">
+
+    <!-- Section heading -->
+    <div class="accuracy-section-header">
+        <div class="accuracy-section-icon"><i class="fas fa-crosshairs"></i></div>
+        <div>
+            <div class="accuracy-section-title">AI Accuracy Analytics</div>
+            <div class="accuracy-section-sub">Internal consistency of AI lead classification predictions</div>
+        </div>
+    </div>
+
+    <!-- 4 Metric mini-cards -->
+    <div class="accuracy-metrics-grid">
+
+        <div class="glass-card accuracy-mini-card">
+            <div class="accuracy-mini-icon ami-teal"><i class="fas fa-bullseye"></i></div>
+            <div class="accuracy-mini-value">{{ accuracy_data.overall_accuracy }}%</div>
+            <div class="accuracy-mini-label">Overall Accuracy</div>
+            <div class="accuracy-mini-bar-wrap">
+                <div class="accuracy-mini-bar animate-width" data-width="{{ accuracy_data.overall_accuracy }}"></div>
+            </div>
+        </div>
+
+        <div class="glass-card accuracy-mini-card">
+            <div class="accuracy-mini-icon ami-blue"><i class="fas fa-list-check"></i></div>
+            <div class="accuracy-mini-value">{{ accuracy_data.total_evaluated }}</div>
+            <div class="accuracy-mini-label">Total Evaluated</div>
+            <div class="accuracy-mini-bar-wrap">
+                <div class="accuracy-mini-bar" style="width:100%;background:linear-gradient(90deg,#3b82f6,#6366f1);"></div>
+            </div>
+        </div>
+
+        <div class="glass-card accuracy-mini-card">
+            <div class="accuracy-mini-icon ami-green"><i class="fas fa-circle-check"></i></div>
+            <div class="accuracy-mini-value">{{ accuracy_data.correct_predictions }}</div>
+            <div class="accuracy-mini-label">Correct Predictions</div>
+            <div class="accuracy-mini-bar-wrap">
+                {% if accuracy_data.total_evaluated > 0 %}
+                <div class="accuracy-mini-bar animate-width"
+                     data-width="{{ (accuracy_data.correct_predictions / accuracy_data.total_evaluated * 100)|round(1) }}"
+                     style="background:linear-gradient(90deg,#22c55e,#4ade80);"></div>
+                {% else %}
+                <div class="accuracy-mini-bar" style="width:0;"></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="glass-card accuracy-mini-card">
+            <div class="accuracy-mini-icon ami-red"><i class="fas fa-circle-xmark"></i></div>
+            <div class="accuracy-mini-value">{{ accuracy_data.incorrect_predictions }}</div>
+            <div class="accuracy-mini-label">Incorrect Predictions</div>
+            <div class="accuracy-mini-bar-wrap">
+                {% if accuracy_data.total_evaluated > 0 %}
+                <div class="accuracy-mini-bar animate-width"
+                     data-width="{{ (accuracy_data.incorrect_predictions / accuracy_data.total_evaluated * 100)|round(1) }}"
+                     style="background:linear-gradient(90deg,#ef4444,#f87171);"></div>
+                {% else %}
+                <div class="accuracy-mini-bar" style="width:0;"></div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Charts: Trend + Breakdown -->
+    <div class="charts-row charts-row-2">
+
+        <div class="glass-card chart-card">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Accuracy Trend</div>
+                    <div class="chart-sub">Daily prediction accuracy over time</div>
+                </div>
+            </div>
+            <div class="chart-area">
+                <canvas id="accuracyTrendChart" height="140"></canvas>
+            </div>
+        </div>
+
+        <div class="glass-card chart-card">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Accuracy Breakdown</div>
+                    <div class="chart-sub">Correct vs incorrect per lead class</div>
+                </div>
+            </div>
+            <div class="chart-area">
+                <canvas id="accuracyBreakdownChart" height="140"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+<!-- ══ End AI Accuracy Analytics ══ -->
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+{% if not empty %}
+<!-- JSON data payload for dynamic chart scripts -->
+<script id="analytics-data" type="application/json">
+{
+    "dailyLabels": {{ daily_labels|tojson }},
+    "dailyValues": {{ daily_values|tojson }},
+    "sentimentCounts": {
+        "Positive": {{ sentiment_counts['Positive'] }},
+        "Neutral": {{ sentiment_counts['Neutral'] }},
+        "Negative": {{ sentiment_counts['Negative'] }}
+    },
+    "statusCounts": {
+        "Hot": {{ status_counts['Hot'] }},
+        "Warm": {{ status_counts['Warm'] }},
+        "Cold": {{ status_counts['Cold'] }}
+    },
+    "scoreDist": {
+        "0-20": {{ score_dist['0-20'] }},
+        "21-40": {{ score_dist['21-40'] }},
+        "41-60": {{ score_dist['41-60'] }},
+        "61-80": {{ score_dist['61-80'] }},
+        "81-100": {{ score_dist['81-100'] }}
+    },
+    "translatedLeads": {{ translated_leads }},
+    "nonTranslatedLeads": {{ non_translated_leads }},
+    "performanceScore": {{ performance_score }}
+}
+</script>
+<!-- Accuracy data payload — must be BEFORE dashboard.js so the IIFE can read it -->
+<script id="accuracy-data" type="application/json">
+{
+    "overallAccuracy":      {{ accuracy_data.overall_accuracy }},
+    "totalEvaluated":       {{ accuracy_data.total_evaluated }},
+    "correctPredictions":   {{ accuracy_data.correct_predictions }},
+    "incorrectPredictions": {{ accuracy_data.incorrect_predictions }},
+    "trendLabels":          {{ accuracy_data.accuracy_trend_labels|tojson }},
+    "trendValues":          {{ accuracy_data.accuracy_trend_values|tojson }},
+    "breakdown": {
+        "Hot":  { "correct": {{ accuracy_data.breakdown.Hot.correct }},  "incorrect": {{ accuracy_data.breakdown.Hot.incorrect }}  },
+        "Warm": { "correct": {{ accuracy_data.breakdown.Warm.correct }}, "incorrect": {{ accuracy_data.breakdown.Warm.incorrect }} },
+        "Cold": { "correct": {{ accuracy_data.breakdown.Cold.correct }}, "incorrect": {{ accuracy_data.breakdown.Cold.incorrect }} }
+    }
+}
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endif %}
+{% endblock %}
+

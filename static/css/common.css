@@ -1,0 +1,37 @@
+/* ═══════════════════════════════════════
+   COMMON.CSS — Shared across all pages
+   (login, admin, dashboard)
+═══════════════════════════════════════ *//* ── Reset & Base ── */
+*, *::before, *::after{ box-sizing: border-box; margin: 0; padding: 0; }:root{
+    --blue:        #2563EB;
+    --blue-dark:   #1d4ed8;
+    --blue-light:  #eff6ff;
+    --blue-glow:   rgba(37, 99, 235, 0.18);
+    --bg:          #F5F7FA;
+    --white:       #ffffff;
+    --gray-100:    #f8fafc;
+    --gray-200:    #e5e7eb;
+    --gray-300:    #D1D5DB;
+    --gray-400:    #94a3b8;
+    --gray-500:    #64748b;
+    --gray-700:    #374151;
+    --gray-900:    #111827;
+    --radius-card: 20px;
+    --radius-inp:  12px;
+    --shadow-card: 0 20px 60px rgba(15, 23, 42, 0.10), 0 4px 16px rgba(15, 23, 42, 0.06);
+    --shadow-btn:  0 4px 14px rgba(37, 99, 235, 0.38);
+    --transition:  0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}html, body{
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--gray-900);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Shared Animations ── */
+@keyframes spin      { to { transform: rotate(360deg); } }
+@keyframes fadeIn    { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp   { from { opacity: 0; transform: translateY(32px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes blobFloat { from { transform: translate(0, 0) scale(1); } to { transform: translate(20px, -25px) scale(1.05); } }
+@keyframes shimmer   { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }

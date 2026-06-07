@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login — AI Chatbot Dashboard</title>
+    <meta name="description" content="Secure admin login for the AI Chatbot Lead Management Dashboard.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+
+<div class="login-page">
+
+        <div class="login-card" role="main">
+
+            <!-- Logo -->
+            <div class="card-logo">
+                <div class="logo-icon" aria-hidden="true">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="logo-text">
+                    AI Chatbot Admin
+                    <small>Lead Management Platform</small>
+                </div>
+            </div>
+
+            <!-- Headings -->
+            <h1 class="card-heading">Welcome Back</h1>
+            <p class="card-subheading">Sign in to access the Admin Dashboard</p>
+
+            <!-- Secure Badge -->
+            <div class="secure-badge">
+                <i class="fas fa-shield-halved"></i>
+                Secure Login &nbsp;·&nbsp; SSL Encrypted
+            </div>
+
+            <!-- Flash error from Flask (shown when login fails) -->
+            {% if request.method == 'POST' %}
+            <div class="flash-error" role="alert" id="loginFlashError">
+                <i class="fas fa-circle-exclamation"></i>
+                Invalid username or password. Please try again.
+            </div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form class="login-form" method="POST" id="loginForm" novalidate>
+
+                <!-- Username -->
+                <div class="field-group">
+                    <label class="field-label" for="username">Username</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user input-icon" aria-hidden="true"></i>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            class="login-input"
+                            placeholder="Enter your username"
+                            autocomplete="username"
+                            required
+                            tabindex="1"
+                        >
+                    </div>
+                    <span class="field-error" id="usernameError" role="alert">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        Username is required.
+                    </span>
+                </div>
+
+                <!-- Password -->
+                <div class="field-group">
+                    <label class="field-label" for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock input-icon" aria-hidden="true"></i>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="login-input"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                            tabindex="2"
+                        >
+                        <button
+                            type="button"
+                            class="toggle-password"
+                            id="togglePassword"
+                            aria-label="Show or hide password"
+                            tabindex="3"
+                        >
+                            <i class="fas fa-eye" id="toggleIcon"></i>
+                        </button>
+                    </div>
+                    <span class="field-error" id="passwordError" role="alert">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        Password is required.
+                    </span>
+                </div>
+
+                <!-- Remember Me -->
+                <div class="form-extras">
+                    <label class="remember-me" tabindex="4">
+                        <input type="checkbox" id="rememberMe" name="remember" tabindex="-1">
+                        Remember me
+                    </label>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-login" id="loginBtn" tabindex="5">
+                    <div class="btn-spinner" aria-hidden="true"></div>
+                    <span class="btn-label">
+                        <i class="fas fa-right-to-bracket" aria-hidden="true"></i>
+                        Sign In
+                    </span>
+                </button>
+
+            </form>
+
+            <!-- Footer note -->
+            <p class="card-footer-note">
+                <i class="fas fa-lock"></i>
+                Admin access only. Unauthorized access is prohibited.
+            </p>
+
+        </div>
+
+</div>
+
+<script>
+    /* ── Show / hide password ── */
+    const toggle   = document.getElementById('togglePassword');
+    const passInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    toggle.addEventListener('click', () => {
+        const isPass = passInput.type === 'password';
+        passInput.type = isPass ? 'text' : 'password';
+        toggleIcon.className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+    });
+
+    /* ── Client-side validation ── */
+    const form      = document.getElementById('loginForm');
+    const userInput = document.getElementById('username');
+    const userErr   = document.getElementById('usernameError');
+    const passErr   = document.getElementById('passwordError');
+    const loginBtn  = document.getElementById('loginBtn');
+
+    function validateField(input, errorEl) {
+        const empty = input.value.trim() === '';
+        input.classList.toggle('input-error', empty);
+        errorEl.classList.toggle('visible', empty);
+        return !empty;
+    }
+
+    userInput.addEventListener('blur', () => validateField(userInput, userErr));
+    passInput.addEventListener('blur', () => validateField(passInput, passErr));
+
+    /* clear error on type */
+    [userInput, passInput].forEach(inp => {
+        inp.addEventListener('input', () => {
+            inp.classList.remove('input-error');
+            document.getElementById(inp.id + 'Error').classList.remove('visible');
+        });
+    });
+
+    form.addEventListener('submit', (e) => {
+        const uOk = validateField(userInput, userErr);
+        const pOk = validateField(passInput, passErr);
+
+        if (!uOk || !pOk) {
+            e.preventDefault();
+            if (!uOk) userInput.focus();
+            else passInput.focus();
+            return;
+        }
+
+        /* Loading state */
+        loginBtn.disabled = true;
+        loginBtn.classList.add('loading');
+    });
+
+    /* Keyboard: Enter on inputs submits form */
+    [userInput, passInput].forEach(inp => {
+        inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') form.requestSubmit();
+        });
+    });
+
+    /* Auto-dismiss flash error after 5s */
+    const flash = document.getElementById('loginFlashError');
+    if (flash) {
+        setTimeout(() => {
+            flash.style.transition = 'opacity 0.5s ease';
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 500);
+        }, 5000);
+    }
+</script>
+
+</body>
+</html>

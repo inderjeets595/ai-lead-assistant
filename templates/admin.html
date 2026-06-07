@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+
+{% block title %}AI Chatbot Admin — Leads{% endblock %}
+{% block page_title %}Leads Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="glass-card stat-card accent-blue fade-up fade-up-1">
+        <div class="stat-header">
+            <div class="stat-icon icon-blue"><i class="fas fa-users"></i></div>
+            <div class="stat-label">Total Leads</div>
+        </div>
+        <div class="stat-value">{{ total_leads }}</div>
+        <div class="stat-trend"><i class="fas fa-arrow-up"></i> All time</div>
+    </div>
+    <div class="glass-card stat-card accent-red fade-up fade-up-2">
+        <div class="stat-header">
+            <div class="stat-icon icon-red"><i class="fas fa-fire"></i></div>
+            <div class="stat-label">Hot Leads</div>
+        </div>
+        <div class="stat-value">{{ hot_leads }}</div>
+        <div class="stat-trend"><i class="fas fa-circle" style="color:#f87171;font-size:7px;"></i> High priority</div>
+    </div>
+    <div class="glass-card stat-card accent-orange fade-up fade-up-3">
+        <div class="stat-header">
+            <div class="stat-icon icon-orange"><i class="fas fa-temperature-half"></i></div>
+            <div class="stat-label">Warm Leads</div>
+        </div>
+        <div class="stat-value">{{ warm_leads }}</div>
+        <div class="stat-trend"><i class="fas fa-circle" style="color:#fbbf24;font-size:7px;"></i> Nurturing</div>
+    </div>
+    <div class="glass-card stat-card accent-indigo fade-up fade-up-4">
+        <div class="stat-header">
+            <div class="stat-icon icon-indigo"><i class="fas fa-snowflake"></i></div>
+            <div class="stat-label">Cold Leads</div>
+        </div>
+        <div class="stat-value">{{ cold_leads }}</div>
+        <div class="stat-trend"><i class="fas fa-circle" style="color:#a5b4fc;font-size:7px;"></i> New contacts</div>
+    </div>
+</div>
+
+<!-- Sentiment Row -->
+<div class="stats-grid" style="grid-template-columns: repeat(3,1fr); margin-bottom: 28px;">
+    <div class="glass-card stat-card fade-up fade-up-2">
+        <div class="stat-header">
+            <div class="stat-icon icon-blue"><i class="fas fa-face-smile"></i></div>
+            <div class="stat-label">Positive</div>
+        </div>
+        <div class="stat-value">{{ positive_sentiment }}</div>
+    </div>
+    <div class="glass-card stat-card fade-up fade-up-3">
+        <div class="stat-header">
+            <div class="stat-icon icon-orange"><i class="fas fa-circle-minus"></i></div>
+            <div class="stat-label">Neutral</div>
+        </div>
+        <div class="stat-value">{{ neutral_sentiment }}</div>
+    </div>
+    <div class="glass-card stat-card fade-up fade-up-4">
+        <div class="stat-header">
+            <div class="stat-icon icon-red"><i class="fas fa-face-frown"></i></div>
+            <div class="stat-label">Negative</div>
+        </div>
+        <div class="stat-value">{{ negative_sentiment }}</div>
+    </div>
+</div>
+
+<!-- Leads Table Panel -->
+<div class="glass-card panel fade-up fade-up-5">
+    <div class="panel-header">
+        <div>
+            <h2 class="panel-title">Leads List</h2>
+            <p class="panel-sub">Review, filter, and manage all customer inquiries from one workspace.</p>
+        </div>
+    </div>
+
+    {% if leads|length == 0 %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No leads yet. New leads captured by the chatbot will appear here.</p>
+    </div>
+    {% else %}
+
+    <!-- Controls -->
+    <div class="controls-bar">
+        <div class="ctrl-field">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" id="leadSearch" class="ctrl-input" placeholder="Search name, phone, email, or requirement…">
+        </div>
+        <div class="ctrl-field">
+            <select id="statusFilter" class="ctrl-select" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                <option value="Hot Lead">Hot Lead</option>
+                <option value="Warm Lead">Warm Lead</option>
+                <option value="Cold Lead">Cold Lead</option>
+            </select>
+        </div>
+        <div class="ctrl-field">
+            <select id="sentimentFilter" class="ctrl-select" aria-label="Filter by sentiment">
+                <option value="">All sentiments</option>
+                <option value="Positive">Positive</option>
+                <option value="Neutral">Neutral</option>
+                <option value="Negative">Negative</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+        <table class="leads-tbl">
+            <thead>
+                <tr>
+                    <th style="width:65px;">ID</th>
+                    <th style="width:125px;">Name</th>
+                    <th style="width:115px;">Phone</th>
+                    <th style="width:160px;">Email</th>
+                    <th style="width:190px; min-width:160px;">Requirement</th>
+                    <th style="width:105px;">Sentiment</th>
+                    <th style="width:70px;">Score</th>
+                    <th style="width:110px;">Status</th>
+                    <th style="width:100px; text-align:center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="leadsTableBody">
+                {% for lead in leads %}
+                <tr class="lead-row"
+                    data-search="{{ (lead.name ~ ' ' ~ lead.phone ~ ' ' ~ lead.email ~ ' ' ~ lead.requirement)|lower }}"
+                    data-status="{{ lead.status }}"
+                    data-sentiment="{{ lead.sentiment }}">
+                    <td><span class="cell-id">#{{ lead.id }}</span></td>
+                    <td><span class="cell-name">{{ lead.name }}</span></td>
+                    <td><span class="cell-contact">{{ lead.phone }}</span></td>
+                    <td><span class="cell-contact">{{ lead.email }}</span></td>
+                    <td><span class="req-cell" title="{{ lead.requirement }}">{{ lead.requirement }}</span></td>
+                    <td>
+                        {% if lead.sentiment == "Positive" %}
+                            <span class="badge badge-positive"><i class="fas fa-face-smile"></i>Positive</span>
+                        {% elif lead.sentiment == "Neutral" %}
+                            <span class="badge badge-neutral"><i class="fas fa-circle-minus"></i>Neutral</span>
+                        {% elif lead.sentiment == "Negative" %}
+                            <span class="badge badge-negative"><i class="fas fa-face-frown"></i>Negative</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if lead.score is not none %}
+                            {% if lead.score >= 70 %}
+                                <span class="score-badge score-high">{{ lead.score }}</span>
+                            {% elif lead.score >= 30 %}
+                                <span class="score-badge score-medium">{{ lead.score }}</span>
+                            {% else %}
+                                <span class="score-badge score-low">{{ lead.score }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="score-badge score-low">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if lead.status == "Hot Lead" %}
+                            <span class="badge badge-hot"><i class="fas fa-fire"></i>Hot Lead</span>
+                        {% elif lead.status == "Warm Lead" %}
+                            <span class="badge badge-warm"><i class="fas fa-temperature-half"></i>Warm Lead</span>
+                        {% elif lead.status == "Cold Lead" %}
+                            <span class="badge badge-cold"><i class="fas fa-snowflake"></i>Cold Lead</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:center;">
+                        <div class="actions-group">
+                            <button type="button"
+                                    class="act-btn act-view"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#leadModal"
+                                    data-id="#{{ lead.id }}"
+                                    data-name="{{ lead.name }}"
+                                    data-phone="{{ lead.phone }}"
+                                    data-email="{{ lead.email }}"
+                                    data-requirement="{{ lead.requirement }}"
+                                    data-sentiment="{{ lead.sentiment }}"
+                                    data-score="{{ lead.score }}"
+                                    data-status="{{ lead.status }}"
+                                    title="View lead"
+                                    aria-label="View lead #{{ lead.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <!--
+                            <button type="button"
+                                    class="act-btn act-edit"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editLeadModal"
+                                    data-action="/edit/{{ lead.id }}"
+                                    data-id="#{{ lead.id }}"
+                                    data-name="{{ lead.name }}"
+                                    data-phone="{{ lead.phone }}"
+                                    data-email="{{ lead.email }}"
+                                    data-requirement="{{ lead.requirement }}"
+                                    title="Edit lead"
+                                    aria-label="Edit lead #{{ lead.id }}">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            -->
+                            <a href="/delete/{{ lead.id }}"
+                               class="act-btn act-delete"
+                               onclick="return confirm('Delete lead #{{ lead.id }}?')"
+                               title="Delete lead"
+                               aria-label="Delete lead #{{ lead.id }}">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr id="noResultsRow" class="no-results-row d-none">
+                    <td colspan="9">No leads match the current search or filters.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="panel-footer">
+        <div id="paginationInfo" class="pag-info"></div>
+        <div id="paginationControls" class="pag-controls" aria-label="Leads pagination"></div>
+    </div>
+
+    {% endif %}
+</div>
+
+<!-- ══ Edit Lead Modal ══ -->
+<div class="modal fade" id="editLeadModal" tabindex="-1" aria-labelledby="editLeadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <form class="modal-content" id="editLeadForm" method="POST">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="editLeadModalLabel">Edit Lead</h5>
+                    <div class="text-muted small" id="editLeadMeta"></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="editLeadName">Name</label>
+                        <input class="form-control" id="editLeadName" name="name" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="editLeadPhone">Phone</label>
+                        <input class="form-control" id="editLeadPhone" name="phone" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="editLeadEmail">Email</label>
+                        <input class="form-control" id="editLeadEmail" name="email" type="email" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="editLeadRequirement">Requirement</label>
+                        <textarea class="form-control" id="editLeadRequirement" name="requirement" rows="6" required></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check me-1"></i>Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ══ View Lead Modal ══ -->
+<div class="modal fade" id="leadModal" tabindex="-1" aria-labelledby="leadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="leadModalLabel">Lead Details</h5>
+                    <div class="text-muted small" id="leadModalMeta"></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <div class="text-muted small">Name</div>
+                        <div class="fw-semibold" id="modalLeadName"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Phone</div>
+                        <div class="fw-semibold" id="modalLeadPhone"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Email</div>
+                        <div class="fw-semibold" id="modalLeadEmail"></div>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <div class="text-muted small">Sentiment</div>
+                        <div class="fw-semibold" id="modalLeadSentiment"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Score</div>
+                        <div class="fw-semibold" id="modalLeadScore"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Status</div>
+                        <div class="fw-semibold" id="modalLeadStatus"></div>
+                    </div>
+                </div>
+                <div class="text-muted small mb-2">Full Requirement</div>
+                <div class="modal-requirement" id="modalLeadRequirement"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const rows = Array.from(document.querySelectorAll('.lead-row'));
+    const searchInput = document.getElementById('leadSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const sentimentFilter = document.getElementById('sentimentFilter');
+    const noResultsRow = document.getElementById('noResultsRow');
+    const paginationInfo = document.getElementById('paginationInfo');
+    const paginationControls = document.getElementById('paginationControls');
+    const pageSize = 8;
+    let currentPage = 1;
+    let filteredRows = rows;
+
+    function applyFilters() {
+        const query = (searchInput?.value || '').trim().toLowerCase();
+        const status = statusFilter?.value || '';
+        const sentiment = sentimentFilter?.value || '';
+        filteredRows = rows.filter(function (row) {
+            const matchesSearch = !query || row.dataset.search.includes(query);
+            const matchesStatus = !status || row.dataset.status === status;
+            const matchesSentiment = !sentiment || row.dataset.sentiment === sentiment;
+            return matchesSearch && matchesStatus && matchesSentiment;
+        });
+        currentPage = 1;
+        renderTable();
+    }
+
+    function renderTable() {
+        const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+        currentPage = Math.min(currentPage, totalPages);
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        rows.forEach(function (row) { row.classList.add('d-none'); });
+        filteredRows.slice(start, end).forEach(function (row) { row.classList.remove('d-none'); });
+        if (noResultsRow) noResultsRow.classList.toggle('d-none', filteredRows.length > 0);
+        renderPagination(totalPages, start, end);
+    }
+
+    function renderPagination(totalPages, start, end) {
+        if (!paginationInfo || !paginationControls) return;
+        const total = filteredRows.length;
+        const firstRecord = total === 0 ? 0 : start + 1;
+        const lastRecord = Math.min(end, total);
+        paginationInfo.textContent = `Showing ${firstRecord}–${lastRecord} of ${total} lead${total === 1 ? '' : 's'}  ·  Page ${currentPage} of ${totalPages}`;
+        paginationControls.innerHTML = '';
+        const prev = createPageBtn('←', currentPage === 1, () => { currentPage--; renderTable(); });
+        paginationControls.appendChild(prev);
+        for (let p = 1; p <= totalPages; p++) {
+            const btn = createPageBtn(p, false, () => { currentPage = p; renderTable(); });
+            btn.classList.toggle('active', p === currentPage);
+            paginationControls.appendChild(btn);
+        }
+        const next = createPageBtn('→', currentPage === totalPages, () => { currentPage++; renderTable(); });
+        paginationControls.appendChild(next);
+    }
+
+    function createPageBtn(label, disabled, onClick) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pag-btn';
+        btn.textContent = label;
+        btn.disabled = disabled;
+        btn.addEventListener('click', onClick);
+        return btn;
+    }
+
+    [searchInput, statusFilter, sentimentFilter].forEach(function (ctrl) {
+        if (ctrl) { ctrl.addEventListener('input', applyFilters); ctrl.addEventListener('change', applyFilters); }
+    });
+
+    const leadModal = document.getElementById('leadModal');
+    if (leadModal) {
+        leadModal.addEventListener('show.bs.modal', function (e) {
+            const b = e.relatedTarget;
+            if (!b) return;
+            document.getElementById('leadModalMeta').textContent = b.dataset.id || '';
+            document.getElementById('modalLeadName').textContent = b.dataset.name || 'N/A';
+            document.getElementById('modalLeadPhone').textContent = b.dataset.phone || 'N/A';
+            document.getElementById('modalLeadEmail').textContent = b.dataset.email || 'N/A';
+            document.getElementById('modalLeadRequirement').textContent = b.dataset.requirement || 'N/A';
+            document.getElementById('modalLeadSentiment').textContent = b.dataset.sentiment || 'N/A';
+            document.getElementById('modalLeadScore').textContent = b.dataset.score || '0';
+            document.getElementById('modalLeadStatus').textContent = b.dataset.status || 'N/A';
+        });
+    }
+
+    const editLeadModal = document.getElementById('editLeadModal');
+    if (editLeadModal) {
+        editLeadModal.addEventListener('show.bs.modal', function (e) {
+            const b = e.relatedTarget;
+            if (!b) return;
+            document.getElementById('editLeadForm').action = b.dataset.action || '';
+            document.getElementById('editLeadMeta').textContent = b.dataset.id || '';
+            document.getElementById('editLeadName').value = b.dataset.name || '';
+            document.getElementById('editLeadPhone').value = b.dataset.phone || '';
+            document.getElementById('editLeadEmail').value = b.dataset.email || '';
+            document.getElementById('editLeadRequirement').value = b.dataset.requirement || '';
+        });
+    }
+
+    renderTable();
+});
+</script>
+{% endblock %}
