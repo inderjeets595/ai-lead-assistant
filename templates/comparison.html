@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}AI Chatbot Admin — Comparison Dashboard{% endblock %}
+{% block page_title %}Comparison Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/comparison.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% if empty %}
+<!-- ── Empty State ── -->
+<div class="analytics-empty fade-up">
+    <i class="fas fa-scale-balanced"></i>
+    <h3>No Comparison Data Yet</h3>
+    <p>Start capturing leads through the chatbot and comparison analytics will populate here automatically.</p>
+    <a href="/admin" style="padding:10px 22px;background:var(--blue);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;margin-top:6px;">
+        <i class="fas fa-users me-2"></i>View Leads
+    </a>
+</div>
+
+{% else %}
+
+<!-- ══ Page Header ══ -->
+<div class="comparison-header fade-up fade-up-1">
+    <div class="comparison-header-icon">
+        <i class="fas fa-scale-balanced"></i>
+    </div>
+    <div class="comparison-header-text">
+        <h1>Performance Comparison</h1>
+        <p>Generate metrics for both approaches to enable chart plotting & benchmark analysis</p>
+    </div>
+</div>
+
+<!-- ══ Step 1 & 2: Generation Action Buttons ══ -->
+<div class="gen-buttons-container fade-up fade-up-2">
+    <!-- Generate Existing Data Button -->
+    <div class="gen-btn-card">
+        <button type="button" class="action-gen-btn btn-existing" id="genExistingBtn">
+            <i class="fas fa-cog"></i> Generate Existing Approach Data
+        </button>
+        <div class="gen-status-badge status-pending" id="statusExisting">
+            <i class="fas fa-clock"></i> Not Generated
+        </div>
+    </div>
+
+    <!-- Generate Proposed Data Button -->
+    <div class="gen-btn-card">
+        <button type="button" class="action-gen-btn btn-proposed" id="genProposedBtn">
+            <i class="fas fa-rocket"></i> Generate Proposed Approach Data
+        </button>
+        <div class="gen-status-badge status-pending" id="statusProposed">
+            <i class="fas fa-clock"></i> Not Generated
+        </div>
+    </div>
+</div>
+
+<!-- ══ KPI Dual Cards Grid ══ -->
+<div class="kpi-grid fade-up fade-up-3">
+
+    <!-- Efficiency -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon kpi-indigo"><i class="fas fa-bolt"></i></div>
+            <div class="kpi-label">Efficiency</div>
+        </div>
+        <div class="kpi-dual-body">
+            <!-- Existing -->
+            <div class="kpi-sub-block existing-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-cog"></i> Existing Approach</span>
+                    <span class="kpi-value-text" id="existing-val-0">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-existing" id="existing-bar-0" style="width: 0%;"></div>
+                </div>
+            </div>
+            <!-- Proposed -->
+            <div class="kpi-sub-block proposed-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-rocket"></i> Proposed Approach</span>
+                    <span class="kpi-value-text proposed-text" id="proposed-val-0">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-proposed" id="proposed-bar-0" style="width: 0%;"></div>
+                </div>
+                <div class="kpi-delta" id="delta-0" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accuracy -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon kpi-teal"><i class="fas fa-bullseye"></i></div>
+            <div class="kpi-label">Accuracy</div>
+        </div>
+        <div class="kpi-dual-body">
+            <!-- Existing -->
+            <div class="kpi-sub-block existing-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-cog"></i> Existing Approach</span>
+                    <span class="kpi-value-text" id="existing-val-1">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-existing" id="existing-bar-1" style="width: 0%;"></div>
+                </div>
+            </div>
+            <!-- Proposed -->
+            <div class="kpi-sub-block proposed-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-rocket"></i> Proposed Approach</span>
+                    <span class="kpi-value-text proposed-text" id="proposed-val-1">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-proposed" id="proposed-bar-1" style="width: 0%;"></div>
+                </div>
+                <div class="kpi-delta" id="delta-1" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Speed -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon kpi-blue"><i class="fas fa-gauge-high"></i></div>
+            <div class="kpi-label">Processing Speed</div>
+        </div>
+        <div class="kpi-dual-body">
+            <!-- Existing -->
+            <div class="kpi-sub-block existing-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-cog"></i> Existing Approach</span>
+                    <span class="kpi-value-text" id="existing-val-2">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-existing" id="existing-bar-2" style="width: 0%;"></div>
+                </div>
+            </div>
+            <!-- Proposed -->
+            <div class="kpi-sub-block proposed-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-rocket"></i> Proposed Approach</span>
+                    <span class="kpi-value-text proposed-text" id="proposed-val-2">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-proposed" id="proposed-bar-2" style="width: 0%;"></div>
+                </div>
+                <div class="kpi-delta" id="delta-2" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Satisfaction -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon kpi-amber"><i class="fas fa-face-smile"></i></div>
+            <div class="kpi-label">Customer Satisfaction</div>
+        </div>
+        <div class="kpi-dual-body">
+            <!-- Existing -->
+            <div class="kpi-sub-block existing-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-cog"></i> Existing Approach</span>
+                    <span class="kpi-value-text" id="existing-val-3">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-existing" id="existing-bar-3" style="width: 0%;"></div>
+                </div>
+            </div>
+            <!-- Proposed -->
+            <div class="kpi-sub-block proposed-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-rocket"></i> Proposed Approach</span>
+                    <span class="kpi-value-text proposed-text" id="proposed-val-3">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-proposed" id="proposed-bar-3" style="width: 0%;"></div>
+                </div>
+                <div class="kpi-delta" id="delta-3" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Efficiency -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-header">
+            <div class="kpi-icon kpi-pink"><i class="fas fa-coins"></i></div>
+            <div class="kpi-label">Cost Efficiency</div>
+        </div>
+        <div class="kpi-dual-body">
+            <!-- Existing -->
+            <div class="kpi-sub-block existing-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-cog"></i> Existing Approach</span>
+                    <span class="kpi-value-text" id="existing-val-4">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-existing" id="existing-bar-4" style="width: 0%;"></div>
+                </div>
+            </div>
+            <!-- Proposed -->
+            <div class="kpi-sub-block proposed-block">
+                <div class="kpi-sub-header">
+                    <span class="kpi-sub-title"><i class="fas fa-rocket"></i> Proposed Approach</span>
+                    <span class="kpi-value-text proposed-text" id="proposed-val-4">--%</span>
+                </div>
+                <div class="kpi-bar-wrap">
+                    <div class="kpi-bar bar-proposed" id="proposed-bar-4" style="width: 0%;"></div>
+                </div>
+                <div class="kpi-delta" id="delta-4" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══ Step 3: Plot Results Button (Disabled by default) ══ -->
+<div class="plot-section fade-up fade-up-4">
+    <button type="button" class="plot-btn disabled-btn" id="plotResultsBtn" disabled>
+        <i class="fas fa-chart-column"></i> Plot Results
+    </button>
+    <span class="plot-hint" id="plotHintText">
+        <i class="fas fa-lock me-1"></i> Generate both Existing and Proposed data above to enable Plot Results.
+    </span>
+</div>
+
+<!-- ══ Charts Placeholder ══ -->
+<div id="chartsPlaceholder" class="glass-card charts-placeholder fade-up fade-up-5">
+    <i class="fas fa-chart-pie"></i>
+    <span>Generate data and click <strong>Plot Results</strong> to view comparison charts</span>
+</div>
+
+<!-- ══ Charts Grid ══ -->
+<div id="chartsContainer" class="comparison-charts-grid" style="display:none;">
+
+    <!-- Efficiency — Doughnut -->
+    <div class="glass-card comparison-chart-card fade-up">
+        <div class="comparison-chart-header">
+            <div class="comparison-chart-icon cci-indigo"><i class="fas fa-bolt"></i></div>
+            <div>
+                <div class="comparison-chart-title">Efficiency</div>
+                <div class="comparison-chart-sub">Lead processing efficiency — Doughnut Chart</div>
+            </div>
+        </div>
+        <div class="comparison-chart-area">
+            <canvas id="chart-0"></canvas>
+        </div>
+    </div>
+
+    <!-- Accuracy — Vertical Bar -->
+    <div class="glass-card comparison-chart-card fade-up">
+        <div class="comparison-chart-header">
+            <div class="comparison-chart-icon cci-teal"><i class="fas fa-bullseye"></i></div>
+            <div>
+                <div class="comparison-chart-title">Accuracy</div>
+                <div class="comparison-chart-sub">Classification accuracy — Vertical Bar Chart</div>
+            </div>
+        </div>
+        <div class="comparison-chart-area">
+            <canvas id="chart-1"></canvas>
+        </div>
+    </div>
+
+    <!-- Processing Speed — Line -->
+    <div class="glass-card comparison-chart-card fade-up">
+        <div class="comparison-chart-header">
+            <div class="comparison-chart-icon cci-blue"><i class="fas fa-gauge-high"></i></div>
+            <div>
+                <div class="comparison-chart-title">Processing Speed</div>
+                <div class="comparison-chart-sub">Response latency trend — Line Chart</div>
+            </div>
+        </div>
+        <div class="comparison-chart-area">
+            <canvas id="chart-2"></canvas>
+        </div>
+    </div>
+
+    <!-- Customer Satisfaction — Grouped Bar -->
+    <div class="glass-card comparison-chart-card fade-up">
+        <div class="comparison-chart-header">
+            <div class="comparison-chart-icon cci-amber"><i class="fas fa-face-smile"></i></div>
+            <div>
+                <div class="comparison-chart-title">Customer Satisfaction</div>
+                <div class="comparison-chart-sub">Multi-dimensional score — Grouped Bar Chart</div>
+            </div>
+        </div>
+        <div class="comparison-chart-area">
+            <canvas id="chart-3"></canvas>
+        </div>
+    </div>
+
+    <!-- Cost Efficiency — Horizontal Bar (full width) -->
+    <div class="glass-card comparison-chart-card chart-full-width fade-up">
+        <div class="comparison-chart-header">
+            <div class="comparison-chart-icon cci-pink"><i class="fas fa-coins"></i></div>
+            <div>
+                <div class="comparison-chart-title">Cost Efficiency</div>
+                <div class="comparison-chart-sub">Resource utilization — Horizontal Bar Chart</div>
+            </div>
+        </div>
+        <div class="comparison-chart-area">
+            <canvas id="chart-4"></canvas>
+        </div>
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+{% if not empty %}
+<script>
+    // Inject server-side data for the JS module
+    window.comparisonData = {{ metrics | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/comparison.js') }}"></script>
+{% endif %}
+{% endblock %}
